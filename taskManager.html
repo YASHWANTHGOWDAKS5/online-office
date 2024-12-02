@@ -18,7 +18,6 @@
             padding: 20px;
             background: #007bff;
             color: white;
-            animation: slideIn 1s ease-out;
         }
 
         .container {
@@ -34,18 +33,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            animation: fadeIn 0.5s ease-in;
         }
 
         .task-item.completed {
             background-color: #d4edda;
             text-decoration: line-through;
-            transition: background-color 0.3s ease-in-out;
-        }
-
-        .completed-by {
-            font-size: 0.9em;
-            color: #555;
         }
 
         button {
@@ -53,7 +45,6 @@
             cursor: pointer;
             border: none;
             border-radius: 3px;
-            transition: transform 0.2s, background-color 0.2s;
         }
 
         button.complete-btn {
@@ -61,39 +52,14 @@
             color: white;
         }
 
-        button.complete-btn:hover {
-            transform: scale(1.1);
-            background: #218838;
-        }
-
         button.delete-btn {
             background: #dc3545;
             color: white;
         }
 
-        button.delete-btn:hover {
-            transform: scale(1.1);
-            background: #c82333;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+        .completed-by {
+            font-size: 0.9em;
+            color: #555;
         }
     </style>
 </head>
@@ -121,7 +87,7 @@
             apiKey: "AIzaSyDdZTkt1xowdkNeDsCtQUtzui9agjmfQ_I",
             authDomain: "task-manager-1ade2.firebaseapp.com",
             projectId: "task-manager-1ade2",
-            storageBucket: "task-manager-1ade2.firebasestorage.app",
+            storageBucket: "task-manager-1ade2.appspot.com",
             messagingSenderId: "273032173922",
             appId: "1:273032173922:web:cb53e996dd70967c47b43b",
             databaseURL: "https://task-manager-1ade2-default-rtdb.firebaseio.com/"
@@ -139,15 +105,23 @@
         // Add Task
         addTaskBtn.addEventListener('click', () => {
             const title = taskTitle.value.trim();
+
             if (title) {
                 const newTask = {
                     title,
                     completed: false,
-                    completedBy: [] // Array to hold names of users who completed the task
+                    completedBy: [] // Store user names who completed the task
                 };
 
-                db.ref('tasks').push(newTask);
-                taskTitle.value = '';
+                // Push task to Firebase
+                db.ref('tasks').push(newTask)
+                    .then(() => {
+                        taskTitle.value = ''; // Clear input field
+                        console.log('Task added successfully!');
+                    })
+                    .catch((error) => {
+                        console.error('Error adding task:', error);
+                    });
             } else {
                 alert('Please enter a task title.');
             }
@@ -163,12 +137,12 @@
                 const taskDiv = document.createElement('div');
                 taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
 
-                const completedByNames = task.completedBy.join(', ') || 'None';
+                const completedBy = task.completedBy.join(', ') || 'None';
 
                 taskDiv.innerHTML = `
                     <div>
-                        <span>${task.title}</span>
-                        <p class="completed-by">Completed by: ${completedByNames}</p>
+                        <strong>${task.title}</strong>
+                        <p class="completed-by">Completed by: ${completedBy}</p>
                     </div>
                     <div>
                         <input type="text" placeholder="Your Name" id="user-${id}" />
@@ -193,6 +167,7 @@
                 return;
             }
 
+            // Retrieve the current task and update the "completedBy" array
             db.ref(`tasks/${id}`).once('value', (snapshot) => {
                 const task = snapshot.val();
                 const completedBy = task.completedBy || [];
@@ -210,7 +185,9 @@
 
         // Delete Task
         function deleteTask(id) {
-            db.ref(`tasks/${id}`).remove();
+            db.ref(`tasks/${id}`).remove()
+                .then(() => console.log('Task deleted successfully!'))
+                .catch((error) => console.error('Error deleting task:', error));
         }
     </script>
 </body>
