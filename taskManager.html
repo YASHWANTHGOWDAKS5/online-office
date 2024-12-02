@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager with Firebase</title>
+    <title>Enhanced Task Manager</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,6 +18,7 @@
             padding: 20px;
             background: #007bff;
             color: white;
+            animation: slideIn 1s ease-out;
         }
 
         .container {
@@ -33,11 +34,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            animation: fadeIn 0.5s ease-in;
         }
 
         .task-item.completed {
             background-color: #d4edda;
             text-decoration: line-through;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .completed-by {
+            font-size: 0.9em;
+            color: #555;
         }
 
         button {
@@ -45,6 +53,7 @@
             cursor: pointer;
             border: none;
             border-radius: 3px;
+            transition: transform 0.2s, background-color 0.2s;
         }
 
         button.complete-btn {
@@ -52,9 +61,39 @@
             color: white;
         }
 
+        button.complete-btn:hover {
+            transform: scale(1.1);
+            background: #218838;
+        }
+
         button.delete-btn {
             background: #dc3545;
             color: white;
+        }
+
+        button.delete-btn:hover {
+            transform: scale(1.1);
+            background: #c82333;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -78,15 +117,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
     <script>
         // Firebase configuration
-    const firebaseConfig = {
-    apiKey: "AIzaSyDdZTkt1xowdkNeDsCtQUtzui9agjmfQ_I",
-    authDomain: "task-manager-1ade2.firebaseapp.com",
-    projectId: "task-manager-1ade2",
-    storageBucket: "task-manager-1ade2.firebasestorage.app",
-    messagingSenderId: "273032173922",
-    appId: "1:273032173922:web:cb53e996dd70967c47b43b",
-   databaseURL: "https://task-manager-1ade2-default-rtdb.firebaseio.com/"
-  };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdZTkt1xowdkNeDsCtQUtzui9agjmfQ_I",
+            authDomain: "task-manager-1ade2.firebaseapp.com",
+            projectId: "task-manager-1ade2",
+            storageBucket: "task-manager-1ade2.firebasestorage.app",
+            messagingSenderId: "273032173922",
+            appId: "1:273032173922:web:cb53e996dd70967c47b43b",
+            databaseURL: "https://task-manager-1ade2-default-rtdb.firebaseio.com/"
+        };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -103,7 +142,8 @@
             if (title) {
                 const newTask = {
                     title,
-                    completed: false
+                    completed: false,
+                    completedBy: [] // Array to hold names of users who completed the task
                 };
 
                 db.ref('tasks').push(newTask);
@@ -123,11 +163,17 @@
                 const taskDiv = document.createElement('div');
                 taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
 
+                const completedByNames = task.completedBy.join(', ') || 'None';
+
                 taskDiv.innerHTML = `
-                    <span>${task.title}</span>
                     <div>
-                        <button class="complete-btn" onclick="toggleTask('${id}', ${task.completed})">
-                            ${task.completed ? 'Undo' : 'Complete'}
+                        <span>${task.title}</span>
+                        <p class="completed-by">Completed by: ${completedByNames}</p>
+                    </div>
+                    <div>
+                        <input type="text" placeholder="Your Name" id="user-${id}" />
+                        <button class="complete-btn" onclick="markAsCompleted('${id}')">
+                            ${task.completed ? 'Add Name' : 'Complete'}
                         </button>
                         <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
                     </div>
@@ -137,9 +183,29 @@
             }
         });
 
-        // Toggle Task Completion
-        function toggleTask(id, completed) {
-            db.ref(`tasks/${id}`).update({ completed: !completed });
+        // Mark Task as Completed by a User
+        function markAsCompleted(id) {
+            const userNameInput = document.getElementById(`user-${id}`);
+            const userName = userNameInput.value.trim();
+
+            if (!userName) {
+                alert('Please enter your name.');
+                return;
+            }
+
+            db.ref(`tasks/${id}`).once('value', (snapshot) => {
+                const task = snapshot.val();
+                const completedBy = task.completedBy || [];
+
+                if (!completedBy.includes(userName)) {
+                    completedBy.push(userName);
+                }
+
+                db.ref(`tasks/${id}`).update({
+                    completed: true,
+                    completedBy: completedBy
+                });
+            });
         }
 
         // Delete Task
