@@ -3,174 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
+    <title>Task Manager with Firebase</title>
     <style>
-        /* Same CSS from your original code */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: #007bff;
+            color: white;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .task-item {
+            background: #ffffff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-item.completed {
+            background-color: #d4edda;
+            text-decoration: line-through;
+        }
+
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+        }
+
+        button.complete-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        button.delete-btn {
+            background: #dc3545;
+            color: white;
+        }
     </style>
 </head>
 <body>
-    <div class="interactive-bg">
-        <canvas id="backgroundCanvas"></canvas>
-    </div>
     <header>
-        <h1>Task Manager</h1>
-        <p>Organize and prioritize your tasks effectively<br>(please press undo in the task list once after marking as completed so others can use)</p>
+        <h1>Shared Task Manager</h1>
+        <p>Manage tasks collaboratively in real-time.</p>
     </header>
 
-    <!-- User Login Section -->
-    <div class="section" id="loginSection">
-        <h2>Login</h2>
-        <input type="text" id="userNameInput" placeholder="Enter Your Name" />
-        <button id="loginBtn">Login</button>
-    </div>
+    <div class="container">
+        <h2>Add Task</h2>
+        <input type="text" id="taskTitle" placeholder="Task Title" />
+        <button id="addTaskBtn">Add Task</button>
 
-    <!-- Task Manager Container -->
-    <div class="container" id="taskManagerContainer" style="display: none;">
-        <div class="section">
-            <h2>Add New Task</h2>
-            <input type="text" id="taskTitle" placeholder="Task Title" />
-            <textarea id="taskDescription" rows="3" placeholder="Task Description"></textarea>
-            <label for="taskPriority">Priority:</label>
-            <select id="taskPriority">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-            </select>
-            <button id="addTaskBtn">Add Task</button>
-        </div>
-        <div class="section">
-            <h2>Task List</h2>
-            <div id="taskList" class="task-list"></div>
-        </div>
-    </div>
-
-    <!-- Completed Users Section -->
-    <div id="completedByContainer">
-        <h3>Completed by:</h3>
-        <ul id="completedUsersList"></ul>
+        <h2>Task List</h2>
+        <div id="taskList"></div>
     </div>
 
     <!-- Firebase Setup -->
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
     <script>
+        // Firebase configuration
     const firebaseConfig = {
-        apiKey: "AIzaSyDO3hHDK6FGqBwYDw493rrKZv8Z1zKQUGQ",
-        authDomain: "teamchat2-8402b.firebaseapp.com",
-        projectId: "teamchat2-8402b",
-        storageBucket: "teamchat2-8402b.firebasestorage.app",
-        messagingSenderId: "86338331201",
-        appId: "1:86338331201:web:b4045cb40b66b1b5901cc0",
-        measurementId: "G-DXGW13J0YB"
-      };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    // This is very IMPORTANT!! We're going to use "db" a lot.
-    var db = firebase.database()
+    apiKey: "AIzaSyDdZTkt1xowdkNeDsCtQUtzui9agjmfQ_I",
+    authDomain: "task-manager-1ade2.firebaseapp.com",
+    projectId: "task-manager-1ade2",
+    storageBucket: "task-manager-1ade2.firebasestorage.app",
+    messagingSenderId: "273032173922",
+    appId: "1:273032173922:web:cb53e996dd70967c47b43b",
+    measurementId: "G-C8TC01ZT57"
+  };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // DOM Elements
-        const taskList = document.getElementById('taskList');
-        const addTaskBtn = document.getElementById('addTaskBtn');
         const taskTitle = document.getElementById('taskTitle');
-        const taskDescription = document.getElementById('taskDescription');
-        const taskPriority = document.getElementById('taskPriority');
-        const loginSection = document.getElementById('loginSection');
-        const taskManagerContainer = document.getElementById('taskManagerContainer');
-        const userNameInput = document.getElementById('userNameInput');
-        const loginBtn = document.getElementById('loginBtn');
-        const completedUsersList = document.getElementById('completedUsersList');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
 
-        let loggedInUser = localStorage.getItem('userName');
+        // Add Task
+        addTaskBtn.addEventListener('click', () => {
+            const title = taskTitle.value.trim();
+            if (title) {
+                const newTask = {
+                    title,
+                    completed: false
+                };
 
-        // Login Functionality
-        loginBtn.addEventListener('click', () => {
-            const userName = userNameInput.value.trim();
-            if (userName) {
-                loggedInUser = userName;
-                localStorage.setItem('userName', userName);
-                loginSection.style.display = 'none';
-                taskManagerContainer.style.display = 'block';
-                fetchAndRenderTasks();
+                db.ref('tasks').push(newTask);
+                taskTitle.value = '';
             } else {
-                alert('Please enter your name');
+                alert('Please enter a task title.');
             }
         });
 
-        // Fetch Tasks from Firestore
-        async function fetchAndRenderTasks() {
-            const snapshot = await db.collection('tasks').get();
-            const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderTasks(tasks);
-        }
+        // Fetch and Render Tasks
+        db.ref('tasks').on('value', (snapshot) => {
+            const tasks = snapshot.val();
+            taskList.innerHTML = ''; // Clear the task list before rendering
 
-        // Render Tasks
-        function renderTasks(tasks) {
-            taskList.innerHTML = '';
-            tasks.forEach(task => {
+            for (let id in tasks) {
+                const task = tasks[id];
                 const taskDiv = document.createElement('div');
-                taskDiv.classList.add('task-item');
-                if (task.completed) {
-                    taskDiv.classList.add('completed');
-                }
+                taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
 
                 taskDiv.innerHTML = `
+                    <span>${task.title}</span>
                     <div>
-                        <strong>${task.title}</strong> (${task.priority})
-                        <p>${task.description}</p>
-                    </div>
-                    <div>
-                        <button onclick="toggleTask('${task.id}', ${task.completed})">${task.completed ? 'Undo' : 'Complete'}</button>
-                        <button onclick="deleteTask('${task.id}')">Delete</button>
+                        <button class="complete-btn" onclick="toggleTask('${id}', ${task.completed})">
+                            ${task.completed ? 'Undo' : 'Complete'}
+                        </button>
+                        <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
                     </div>
                 `;
+
                 taskList.appendChild(taskDiv);
-            });
-        }
-
-        // Add Task
-        addTaskBtn.addEventListener('click', async () => {
-            const title = taskTitle.value.trim();
-            const description = taskDescription.value.trim();
-            const priority = taskPriority.value;
-
-            if (title && description) {
-                await db.collection('tasks').add({
-                    title,
-                    description,
-                    priority,
-                    completed: false
-                });
-                taskTitle.value = '';
-                taskDescription.value = '';
-                taskPriority.value = 'low';
-                fetchAndRenderTasks();
-            } else {
-                alert('Please fill in all fields.');
             }
         });
 
         // Toggle Task Completion
-        async function toggleTask(taskId, isCompleted) {
-            await db.collection('tasks').doc(taskId).update({
-                completed: !isCompleted
-            });
-            fetchAndRenderTasks();
+        function toggleTask(id, completed) {
+            db.ref(`tasks/${id}`).update({ completed: !completed });
         }
 
         // Delete Task
-        async function deleteTask(taskId) {
-            await db.collection('tasks').doc(taskId).delete();
-            fetchAndRenderTasks();
+        function deleteTask(id) {
+            db.ref(`tasks/${id}`).remove();
         }
-
-        // Load Tasks on Page Load
-        window.onload = () => {
-            if (loggedInUser) {
-                loginSection.style.display = 'none';
-                taskManagerContainer.style.display = 'block';
-                fetchAndRenderTasks();
-            }
-        };
     </script>
 </body>
 </html>
