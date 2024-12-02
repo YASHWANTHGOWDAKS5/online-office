@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Online Office</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body Styling */
+        body {
+            font-family: Arial, sans-serif;
+            color: white;
+            background: linear-gradient(135deg, #000000, #0000FF); /* Black and Blue gradient */
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Interactive Background */
+        .home-interactive-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: -1; /* Behind the content */
+        }
+
+        /* Header */
+        .home-header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .home-header h1 {
+            font-size: 2.5rem;
+            color: #FF8008;
+        }
+
+        .home-header p {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        /* Features Container */
+        .features-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 50px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Individual Feature Box */
+        .feature {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            width: 250px;
+            text-align: center;
+            animation: slideIn 1s ease-out;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: scale(1.1);
+        }
+
+        .feature h2 {
+            font-size: 1.5rem;
+            color: #FF8008;
+        }
+
+        .feature p {
+            font-size: 1rem;
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #FF8008;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 25px;
+            cursor: pointer;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Interactive Background -->
+    <div class="home-interactive-bg"></div>
+    
+    <header class="home-header">
+        <h1>Welcome to Your Online Office</h1>
+        <p>Collaborate. Innovate. Succeed.</p>
+    </header>
+
+    <main class="features-container">
+        <a href="taskManager.html" class="feature" id="taskManager">
+            <h2>📋 Task Manager</h2>
+            <p>Track tasks, deadlines, and milestones effortlessly.</p>
+        </a>
+        <a href="liveChat.html" class="feature" id="liveChat">
+            <h2>💬 Live Chat</h2>
+            <p>Communicate in real-time with team members.</p>
+        </a>
+        <a href="fileSharing.html" class="feature" id="fileSharing">
+            <h2>📁 File Sharing</h2>
+            <p>Upload and share project files securely.</p>
+        </a>
+        <a href="sharedCalendar.html" class="feature" id="sharedCalendar">
+            <h2>📅 Shared Calendar</h2>
+            <p>Stay updated with scheduled meetings and deadlines.</p>
+        </a>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Team Polaris. All rights reserved.</p>
+    </footer>
+
+    <!-- Modal for showing feature details -->
+    <div class="modal" id="featureModal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Feature Title</h2>
+            <p id="modalDescription">Feature description goes here.</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Interactive Background - Randomly moving white dots with lines connecting them
+        const canvas = document.createElement('canvas');
+        document.querySelector('.home-interactive-bg').appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let dots = [];
+        const numDots = 100;
+
+        // Create random dots
+        for (let i = 0; i < numDots; i++) {
+            dots.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                speedX: Math.random() * 0.5 - 0.25,
+                speedY: Math.random() * 0.5 - 0.25,
+                radius: 2 + Math.random() * 2
+            });
+        }
+
+        // Draw lines between dots
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < dots.length; i++) {
+                const dot = dots[i];
+
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = "white";
+                ctx.fill();
+
+                for (let j = i + 1; j < dots.length; j++) {
+                    const otherDot = dots[j];
+                    const dist = Math.sqrt(Math.pow(dot.x - otherDot.x, 2) + Math.pow(dot.y - otherDot.y, 2));
+
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(dot.x, dot.y);
+                        ctx.lineTo(otherDot.x, otherDot.y);
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+                        ctx.stroke();
+                    }
+                }
+
+                dot.x += dot.speedX;
+                dot.y += dot.speedY;
+
+                if (dot.x < 0 || dot.x > canvas.width) dot.speedX *= -1;
+                if (dot.y < 0 || dot.y > canvas.height) dot.speedY *= -1;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw(); // Start animation
+
+        // Modal functionality (for showing feature details)
+        const features = document.querySelectorAll('.feature');
+        const featureModal = document.getElementById('featureModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDescription = document.getElementById('modalDescription');
+
+        features.forEach(feature => {
+            feature.addEventListener('click', () => {
+                modalTitle.textContent = feature.querySelector('h2').textContent;
+                modalDescription.textContent = feature.querySelector('p').textContent;
+                featureModal.style.display = 'flex';
+            });
+        });
+
+        closeModal.addEventListener('click', () => {
+            featureModal.style.display = 'none';
+        });
+
+        window.onclick = (e) => {
+            if (e.target === featureModal) {
+                featureModal.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>

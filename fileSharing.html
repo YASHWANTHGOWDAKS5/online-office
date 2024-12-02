@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload - Online Office</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #000000, #0000FF); /* Black and Blue gradient */
+            color: white;
+            height: auto; /* Allow content to grow dynamically */
+            display: flex;
+            flex-direction: column; /* Ensure content stacks vertically */
+            justify-content: flex-start;
+            align-items: center;
+            overflow-y: auto; /* Ensure page is scrollable */
+            min-height: 100vh; /* Ensure minimum height of the page */
+        }
+
+        .container-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 30px;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            width: 45%; /* Reduced width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: slideInLeft 1s ease-out;
+            margin-right: 30px; /* Space between containers */
+        }
+
+        .file-upload-zone {
+            width: 100%;
+            height: 250px;
+            background-color: #333;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #007BFF;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .file-upload-zone:hover {
+            background-color: #444;
+        }
+
+        .file-upload-zone p {
+            font-size: 1.2rem;
+            color: #007BFF;
+            margin: 0;
+        }
+
+        .file-list {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            overflow-y: auto;
+            height: 200px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .file-item {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-item span {
+            color: #007BFF;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Additional Container for Uploaded Files beside the first container */
+        .download-container {
+            width: 45%;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            text-align: center;
+            animation: slideInRight 1s ease-out;
+        }
+
+        .download-container h3 {
+            margin-bottom: 20px;
+            color: #FF8008;
+        }
+
+        .file-link {
+            color: #00FF00;
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: underline;
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-wrapper">
+        <!-- First Container -->
+        <div class="container">
+            <h2>File Upload</h2>
+            <div class="file-upload-zone" id="fileUploadZone">
+                <p>Drag & Drop Files Here</p>
+                <input type="file" id="fileInput" multiple style="display: none;">
+            </div>
+
+            <div class="file-list" id="fileList"></div>
+
+            <button class="upload-btn" id="uploadBtn">Upload Files</button>
+        </div>
+
+        <!-- Second Container -->
+        <div class="download-container" id="downloadContainer">
+            <h3>Uploaded Files (Downloadable)</h3>
+            <div id="downloadLinks"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileUploadZone = document.getElementById('fileUploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadedFiles = [];
+        const downloadContainer = document.getElementById('downloadContainer');
+        const downloadLinks = document.getElementById('downloadLinks');
+
+        // Function to update file list
+        function updateFileList() {
+            fileList.innerHTML = ''; // Clear previous list
+            uploadedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.classList.add('file-item');
+                fileItem.innerHTML = `
+                    ${file.name} 
+                    <span onclick="removeFile(${index})">Remove</span>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        // Handle drag & drop functionality
+        fileUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadZone.style.backgroundColor = '#555';
+        });
+
+        fileUploadZone.addEventListener('dragleave', () => {
+            fileUploadZone.style.backgroundColor = '#333';
+        });
+
+        fileUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadZone.style.backgroundColor = '#333';
+            const files = e.dataTransfer.files;
+            addFiles(files);
+        });
+
+        // Handle file input
+        fileUploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            addFiles(files);
+        });
+
+        // Add files to the list
+        function addFiles(files) {
+            Array.from(files).forEach(file => {
+                if (!uploadedFiles.some(f => f.name === file.name)) {
+                    uploadedFiles.push(file);
+                }
+            });
+            updateFileList();
+        }
+
+        // Remove file from the list
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        // Handle upload button click (simulated upload)
+        uploadBtn.addEventListener('click', () => {
+            if (uploadedFiles.length > 0) {
+                alert('Files uploaded successfully!');
+                createDownloadLinks();
+                uploadedFiles.length = 0; // Clear uploaded files array
+                updateFileList();
+            } else {
+                alert('No files selected for upload.');
+            }
+        });
+
+        // Create downloadable links for uploaded files
+        function createDownloadLinks() {
+            downloadLinks.innerHTML = ''; // Clear previous links
+            uploadedFiles.forEach(file => {
+                const fileLink = document.createElement('div');
+                const url = URL.createObjectURL(file);
+                fileLink.innerHTML = `
+                    <a href="${url}" download="${file.name}" class="file-link">${file.name}</a>
+                `;
+                downloadLinks.appendChild(fileLink);
+            });
+        }
+    </script>
+</body>
+</html>

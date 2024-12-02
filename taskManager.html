@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        /* General styling */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1d1f27, #3e4a5d);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Interactive Background */
+        .interactive-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: black;
+        }
+
+        canvas {
+            position: absolute;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #f8f8f8;
+        }
+
+        /* Container layout */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .section {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 1.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            text-align: center;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+
+        .section input, .section button, .section textarea, .section select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .section button {
+            background-color: #ff8008;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .section button:hover {
+            background-color: #d46b00;
+        }
+
+        /* Task list styling */
+        .task-list {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .task-item.completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+
+        .task-item button {
+            background-color: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .task-item button:hover {
+            color: red;
+        }
+
+        /* Completed by users container */
+        #completedByContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            max-width: 250px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="interactive-bg">
+        <canvas id="backgroundCanvas"></canvas>
+    </div>
+    <header>
+        <h1>Task Manager</h1>
+        <p>Organize and prioritize your tasks effectively<br> (please press undo in the task list once after marking as completed so others can use)</p>
+    </header>
+
+    <!-- User Login Section -->
+    <div class="section" id="loginSection">
+        <h2>Login</h2>
+        <input type="text" id="userNameInput" placeholder="Enter Your Name" />
+        <button id="loginBtn">Login</button>
+    </div>
+
+    <!-- Task Manager Container -->
+    <div class="container" id="taskManagerContainer" style="display: none;">
+        <!-- Add Task Section -->
+        <div class="section">
+            <h2>Add New Task</h2>
+            <input type="text" id="taskTitle" placeholder="Task Title" />
+            <textarea id="taskDescription" rows="3" placeholder="Task Description"></textarea>
+            <label for="taskPriority">Priority:</label>
+            <select id="taskPriority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+            <button id="addTaskBtn">Add Task</button>
+        </div>
+
+        <!-- Task List Section -->
+        <div class="section">
+            <h2>Task List</h2>
+            <div id="taskList" class="task-list"></div>
+        </div>
+    </div>
+
+    <!-- Completed by Users Container -->
+    <div id="completedByContainer">
+        <h3>Completed by:</h3>
+        <ul id="completedUsersList"></ul>
+    </div>
+
+    <script>
+        // Get elements
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const taskList = document.getElementById('taskList');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskTitle = document.getElementById('taskTitle');
+        const taskDescription = document.getElementById('taskDescription');
+        const taskPriority = document.getElementById('taskPriority');
+        const loginSection = document.getElementById('loginSection');
+        const taskManagerContainer = document.getElementById('taskManagerContainer');
+        const userNameInput = document.getElementById('userNameInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const completedByContainer = document.getElementById('completedByContainer');
+        const completedUsersList = document.getElementById('completedUsersList');
+
+        let loggedInUser = localStorage.getItem('userName');
+
+        // Login function
+        loginBtn.addEventListener('click', () => {
+            const userName = userNameInput.value.trim();
+            if (userName) {
+                loggedInUser = userName;
+                localStorage.setItem('userName', userName);
+                loginSection.style.display = 'none';
+                taskManagerContainer.style.display = 'block';
+                renderTasks();
+            } else {
+                alert('Please enter your name');
+            }
+        });
+
+        // Render Task List
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const taskDiv = document.createElement('div');
+                taskDiv.classList.add('task-item');
+                if (task.completed) {
+                    taskDiv.classList.add('completed');
+                }
+
+                taskDiv.innerHTML = `
+                    <div>
+                        <strong>${task.title}</strong> (${task.priority})
+                        <p>${task.description}</p>
+                    </div>
+                    <div>
+                        <button onclick="toggleTask(${index})">${task.completed ? 'Undo' : 'Complete'}</button>
+                        <button onclick="deleteTask(${index})">Delete</button>
+                    </div>
+                    <div class="complete-user">
+                        <input type="text" id="userName${index}" placeholder="Enter name to mark as complete" />
+                        <button onclick="markComplete(${index})">Mark Complete</button>
+                    </div>
+                `;
+                taskList.appendChild(taskDiv);
+            });
+            updateCompletedUsersList();
+        }
+
+        // Add Task
+        addTaskBtn.addEventListener('click', () => {
+            const title = taskTitle.value.trim();
+            const description = taskDescription.value.trim();
+            const priority = taskPriority.value;
+
+            if (title && description) {
+                tasks.push({ title, description, priority, completed: false, completedUsers: [] });
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                taskTitle.value = '';
+                taskDescription.value = '';
+                taskPriority.value = 'low';
+                renderTasks();
+            } else {
+                alert('Please fill in all fields.');
+            }
+        });
+
+        // Mark Task as Completed by a User
+        function markComplete(index) {
+            const userName = document.getElementById(`userName${index}`).value.trim();
+            if (userName && !tasks[index].completedUsers.includes(userName)) {
+                tasks[index].completed = true;
+                tasks[index].completedUsers.push(userName);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+            }
+        }
+
+        // Toggle Task Completion
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        // Delete Task
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        // Update the Completed Users List
+        function updateCompletedUsersList() {
+            completedUsersList.innerHTML = '';
+            tasks.forEach(task => {
+                task.completedUsers.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = user;
+                    completedUsersList.appendChild(li);
+                });
+            });
+        }
+
+        // Interactive background (same as previous)
+        const canvas = document.getElementById('backgroundCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        const particles = [];
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 3,
+                vx: Math.random() * 1 - 0.5,
+                vy: Math.random() * 1 - 0.5,
+            });
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'white';
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+            });
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        drawParticles();
+
+        // Load Tasks on Page Load
+        window.onload = () => {
+            if (loggedInUser) {
+                loginSection.style.display = 'none';
+                taskManagerContainer.style.display = 'block';
+                renderTasks();
+            }
+        };
+    </script>
+</body>
+</html>
