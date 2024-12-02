@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js"></script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -203,6 +203,17 @@
 
     <!-- JavaScript -->
     <script>
+         const firebaseConfig = {
+    apiKey: "AIzaSyDgBdEpQiyhkgIemOIhMkuorIDwX1nXehk",
+    authDomain: "online-office-675a1.firebaseapp.com",
+    projectId: "online-office-675a1",
+    storageBucket: "online-office-675a1.firebasestorage.app",
+    messagingSenderId: "554514664172",
+    appId: "1:554514664172:web:9551f40fd5ca5d8f5d33c9",
+    measurementId: "G-WXJ172Y995"
+  };
+        const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
         // Interactive Background - Randomly moving white dots with lines connecting them
         const canvas = document.createElement('canvas');
         document.querySelector('.home-interactive-bg').appendChild(canvas);
