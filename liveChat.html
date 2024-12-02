@@ -153,8 +153,11 @@
 
         // Send a new message to Firestore
         sendBtn.addEventListener('click', function() {
+            console.log("Send button clicked");
             const messageText = messageInput.value.trim();
             const user = prompt("Enter your name (this session):") || "User";
+            console.log("User: ", user);
+            console.log("Message Text: ", messageText);
 
             if (messageText !== '') {
                 const message = {
@@ -164,9 +167,12 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
+                console.log("Message: ", message);
+
                 // Save message to Firestore
                 db.collection("messages").add(message)
                     .then(() => {
+                        console.log("Message added successfully");
                         messageInput.value = ''; // Clear input field
                     })
                     .catch(error => {
