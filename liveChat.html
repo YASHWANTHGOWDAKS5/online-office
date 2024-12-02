@@ -1,188 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat - Online Office</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #000000, #0000FF); /* Black and Blue gradient */
-            color: white;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title> MemeChat 2.5 </title>
+    <!-- Google fonts. -->
+    <link href='https://fonts.googleapis.com/css?family=Bungee Outline' rel='stylesheet'/>
+    <link href='https://fonts.googleapis.com/css?family=Varela Round' rel='stylesheet'/>
+    <!-- Use font awesome icons. -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <!-- Use firebase app and database. -->
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
 
-        .container {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 30px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 800px;
-            height: 80%;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            animation: fadeIn 1s forwards;
-        }
+    <!-- The CSS and JS file must be declared after the things above-->
+    <link rel="stylesheet" href="index.css"/>
+    <script type="text/javascript" src="index.js"></script>
 
-        .messages {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: scroll;
-            height: 100%;
-        }
-
-        .message {
-            background-color: rgba(0, 0, 0, 0.8);
-            border-radius: 15px;
-            padding: 10px;
-            margin: 5px 0;
-            max-width: 70%;
-            color: white;
-        }
-
-        .message.sent {
-            align-self: flex-end;
-            background-color: #007BFF;
-        }
-
-        .message.received {
-            align-self: flex-start;
-            background-color: #333;
-        }
-
-        .chat-input-container {
-            display: flex;
-            margin-top: 20px;
-        }
-
-        .chat-input {
-            width: 80%;
-            padding: 10px;
-            border-radius: 15px;
-            border: none;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-size: 1rem;
-        }
-
-        .send-btn {
-            width: 15%;
-            padding: 10px;
-            margin-left: 10px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .send-btn:hover {
-            background-color: #0056b3;
-        }
-
-        /* Keyframe Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="messages" id="messages"></div>
-        <div class="chat-input-container">
-            <input type="text" class="chat-input" id="messageInput" placeholder="Type a message...">
-            <button class="send-btn" id="sendBtn">Send</button>
-        </div>
-    </div>
-
-    <!-- Firebase SDK Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js"></script>
-
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDgBdEpQiyhkgIemOIhMkuorIDwX1nXehk",
-            authDomain: "online-office-675a1.firebaseapp.com",
-            projectId: "online-office-675a1",
-            storageBucket: "online-office-675a1.firebasestorage.app",
-            messagingSenderId: "554514664172",
-            appId: "1:554514664172:web:9551f40fd5ca5d8f5d33c9",
-            measurementId: "G-WXJ172Y995"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        const messagesContainer = document.getElementById('messages');
-        const sendBtn = document.getElementById('sendBtn');
-        const messageInput = document.getElementById('messageInput');
-
-        // Load messages from Firebase Firestore
-        function loadMessages() {
-            db.collection("messages").orderBy("timestamp")
-                .onSnapshot(snapshot => {
-                    messagesContainer.innerHTML = '';
-                    snapshot.forEach(doc => {
-                        const msg = doc.data();
-                        const messageElement = document.createElement('div');
-                        messageElement.classList.add('message', msg.type);
-                        messageElement.textContent = `${msg.user}: ${msg.text}`;
-                        messagesContainer.appendChild(messageElement);
-                    });
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                });
-        }
-
-        // Send a new message to Firestore
-        sendBtn.addEventListener('click', function() {
-            console.log("Send button clicked");
-            const messageText = messageInput.value.trim();
-            const user = prompt("Enter your name (this session):") || "User";
-            console.log("User: ", user);
-            console.log("Message Text: ", messageText);
-
-            if (messageText !== '') {
-                const message = {
-                    user: user,
-                    text: messageText,
-                    type: 'sent',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                console.log("Message: ", message);
-
-                // Save message to Firestore
-                db.collection("messages").add(message)
-                    .then(() => {
-                        console.log("Message added successfully");
-                        messageInput.value = ''; // Clear input field
-                    })
-                    .catch(error => {
-                        console.error("Error adding message: ", error);
-                    });
-            }
-        });
-
-        // Load messages when the page loads
-        window.onload = loadMessages;
-    </script>
-</body>
+  </head>
+  <body>
+  </body>
 </html>
