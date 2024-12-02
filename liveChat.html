@@ -111,33 +111,46 @@
         </div>
     </div>
 
+    <!-- Firebase SDK Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js"></script>
+
     <script>
-        // Simulated Live Chat for Multiple Users (using localStorage)
+        // Firebase Configuration (replace with your config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         const messagesContainer = document.getElementById('messages');
         const sendBtn = document.getElementById('sendBtn');
         const messageInput = document.getElementById('messageInput');
 
-        // Load messages from localStorage if available
+        // Load messages from Firebase Firestore
         function loadMessages() {
-            const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-            messagesContainer.innerHTML = '';
-            savedMessages.forEach(msg => {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', msg.type);
-                messageElement.textContent = `${msg.user}: ${msg.text}`;
-                messagesContainer.appendChild(messageElement);
-            });
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            db.collection("messages").orderBy("timestamp")
+                .onSnapshot(snapshot => {
+                    messagesContainer.innerHTML = '';
+                    snapshot.forEach(doc => {
+                        const msg = doc.data();
+                        const messageElement = document.createElement('div');
+                        messageElement.classList.add('message', msg.type);
+                        messageElement.textContent = `${msg.user}: ${msg.text}`;
+                        messagesContainer.appendChild(messageElement);
+                    });
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                });
         }
 
-        // Save messages to localStorage
-        function saveMessage(msg) {
-            const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-            savedMessages.push(msg);
-            localStorage.setItem('chatMessages', JSON.stringify(savedMessages));
-        }
-
-        // Simulate the message sending
+        // Send a new message to Firestore
         sendBtn.addEventListener('click', function() {
             const messageText = messageInput.value.trim();
             const user = prompt("Enter your name (this session):") || "User";
@@ -146,23 +159,23 @@
                 const message = {
                     user: user,
                     text: messageText,
-                    type: 'sent'
+                    type: 'sent',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // Save and load messages to reflect them across tabs
-                saveMessage(message);
-                loadMessages();
-
-                // Clear input field
-                messageInput.value = '';
+                // Save message to Firestore
+                db.collection("messages").add(message)
+                    .then(() => {
+                        messageInput.value = ''; // Clear input field
+                    })
+                    .catch(error => {
+                        console.error("Error adding message: ", error);
+                    });
             }
         });
 
         // Load messages when the page loads
         window.onload = loadMessages;
-
-        // Listen for localStorage changes in other tabs for real-time sync
-        window.addEventListener('storage', loadMessages);
     </script>
 </body>
 </html>
