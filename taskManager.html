@@ -132,28 +132,32 @@
             const tasks = snapshot.val();
             taskList.innerHTML = ''; // Clear the task list before rendering
 
-            for (let id in tasks) {
-                const task = tasks[id];
-                const taskDiv = document.createElement('div');
-                taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
+            if (tasks) {
+                for (let id in tasks) {
+                    const task = tasks[id];
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
 
-                const completedBy = task.completedBy.join(', ') || 'None';
+                    const completedBy = task.completedBy?.join(', ') || 'None';
 
-                taskDiv.innerHTML = `
-                    <div>
-                        <strong>${task.title}</strong>
-                        <p class="completed-by">Completed by: ${completedBy}</p>
-                    </div>
-                    <div>
-                        <input type="text" placeholder="Your Name" id="user-${id}" />
-                        <button class="complete-btn" onclick="markAsCompleted('${id}')">
-                            ${task.completed ? 'Add Name' : 'Complete'}
-                        </button>
-                        <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
-                    </div>
-                `;
+                    taskDiv.innerHTML = `
+                        <div>
+                            <strong>${task.title}</strong>
+                            <p class="completed-by">Completed by: ${completedBy}</p>
+                        </div>
+                        <div>
+                            <input type="text" placeholder="Your Name" id="user-${id}" />
+                            <button class="complete-btn" onclick="markAsCompleted('${id}')">
+                                ${task.completed ? 'Add Name' : 'Complete'}
+                            </button>
+                            <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
+                        </div>
+                    `;
 
-                taskList.appendChild(taskDiv);
+                    taskList.appendChild(taskDiv);
+                }
+            } else {
+                taskList.innerHTML = '<p>No tasks available. Add a new task to get started!</p>';
             }
         });
 
