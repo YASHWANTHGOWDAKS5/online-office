@@ -3,29 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Task Manager</title>
+    <title>Enhanced Task Manager with Background</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        body, html {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #backgroundCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(to bottom, #000428, #004e92); /* Black and blue gradient */
         }
 
         header {
             text-align: center;
             padding: 20px;
-            background: #007bff;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
         }
 
         .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 50px auto;
             padding: 20px;
+            background: rgba(0, 0, 0, 0.6); /* Transparent black */
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            color: white;
         }
 
         .task-item {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.2);
             margin-bottom: 10px;
             padding: 15px;
             border: 1px solid #ddd;
@@ -36,7 +54,7 @@
         }
 
         .task-item.completed {
-            background-color: #d4edda;
+            background-color: rgba(40, 167, 69, 0.4);
             text-decoration: line-through;
         }
 
@@ -59,11 +77,13 @@
 
         .completed-by {
             font-size: 0.9em;
-            color: #555;
+            color: #bbb;
         }
     </style>
 </head>
 <body>
+    <canvas id="backgroundCanvas"></canvas>
+    
     <header>
         <h1>Shared Task Manager</h1>
         <p>Manage tasks collaboratively in real-time.</p>
@@ -93,53 +113,37 @@
             databaseURL: "https://task-manager-1ade2-default-rtdb.firebaseio.com/"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // DOM Elements
         const taskTitle = document.getElementById('taskTitle');
         const addTaskBtn = document.getElementById('addTaskBtn');
         const taskList = document.getElementById('taskList');
 
-        // Add Task
         addTaskBtn.addEventListener('click', () => {
             const title = taskTitle.value.trim();
-
             if (title) {
                 const newTask = {
                     title,
                     completed: false,
-                    completedBy: [] // Store user names who completed the task
+                    completedBy: []
                 };
-
-                // Push task to Firebase
-                db.ref('tasks').push(newTask)
-                    .then(() => {
-                        taskTitle.value = ''; // Clear input field
-                        console.log('Task added successfully!');
-                    })
-                    .catch((error) => {
-                        console.error('Error adding task:', error);
-                    });
+                db.ref('tasks').push(newTask);
+                taskTitle.value = '';
             } else {
                 alert('Please enter a task title.');
             }
         });
 
-        // Fetch and Render Tasks
         db.ref('tasks').on('value', (snapshot) => {
             const tasks = snapshot.val();
-            taskList.innerHTML = ''; // Clear the task list before rendering
-
+            taskList.innerHTML = '';
             if (tasks) {
                 for (let id in tasks) {
                     const task = tasks[id];
                     const taskDiv = document.createElement('div');
                     taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
-
                     const completedBy = task.completedBy?.join(', ') || 'None';
-
                     taskDiv.innerHTML = `
                         <div>
                             <strong>${task.title}</strong>
@@ -153,7 +157,6 @@
                             <button class="delete-btn" onclick="deleteTask('${id}')">Delete</button>
                         </div>
                     `;
-
                     taskList.appendChild(taskDiv);
                 }
             } else {
@@ -161,38 +164,99 @@
             }
         });
 
-        // Mark Task as Completed by a User
         function markAsCompleted(id) {
             const userNameInput = document.getElementById(`user-${id}`);
             const userName = userNameInput.value.trim();
-
             if (!userName) {
                 alert('Please enter your name.');
                 return;
             }
-
-            // Retrieve the current task and update the "completedBy" array
             db.ref(`tasks/${id}`).once('value', (snapshot) => {
                 const task = snapshot.val();
                 const completedBy = task.completedBy || [];
-
                 if (!completedBy.includes(userName)) {
                     completedBy.push(userName);
                 }
-
-                db.ref(`tasks/${id}`).update({
-                    completed: true,
-                    completedBy: completedBy
-                });
+                db.ref(`tasks/${id}`).update({ completed: true, completedBy });
             });
         }
 
-        // Delete Task
         function deleteTask(id) {
-            db.ref(`tasks/${id}`).remove()
-                .then(() => console.log('Task deleted successfully!'))
-                .catch((error) => console.error('Error deleting task:', error));
+            db.ref(`tasks/${id}`).remove();
         }
+
+        // Interactive Background
+        const canvas = document.getElementById('backgroundCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const numParticles = 100;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = Math.random() * 2 - 1;
+                this.vy = Math.random() * 2 - 1;
+                this.radius = Math.random() * 3 + 1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+        }
+
+        function connectParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / 100})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((particle) => {
+                particle.update();
+                particle.draw();
+            });
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
